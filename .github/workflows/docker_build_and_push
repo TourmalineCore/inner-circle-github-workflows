@@ -3,9 +3,6 @@ name: Publish Docker Image
 on:
   workflow_call:
     inputs:
-      platform:
-        required: true
-        type: string
       # Build-args used to define variables that will be used in image
       # Example of build-args: "|
                           #CDN_ENABLED=true
@@ -25,7 +22,7 @@ jobs:
     uses: ./.github/workflows/docker_digest_build_and_push.yml
     with:
       inputs:
-        platform: ${{ inputs.platform }}
+        platform: amd64
         build-args: ${{ inputs.build-args }}
         prefix: ${{ inputs.prefix }}
     # without this it cannot login to the registry
@@ -36,7 +33,7 @@ jobs:
     uses: ./.github/workflows/docker_digest_build_and_push.yml
     with:
       inputs:
-        platform: ${{ inputs.platform }}
+        platform: arm64
         build-args: ${{ inputs.build-args }}
         prefix: ${{ inputs.prefix }}  
   # without this it cannot login to the registry
