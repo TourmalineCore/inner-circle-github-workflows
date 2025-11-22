@@ -37,11 +37,11 @@ jobs:
           # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
           digest-name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ env.digest-platform }}//\//-}
 
-          repository-lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          REPOSITORY_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
           echo "digest-platform=$digest-platform" >> $GITHUB_ENV
           echo "digest-name=$digest-name" >> $GITHUB_ENV
-          echo "repository=$repository-lower" >> $GITHUB_ENV
+          echo "repository=$REPOSITORY_LOWER" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
