@@ -36,7 +36,7 @@ jobs:
           echo "digest-platform=$digest_platform" >> $GITHUB_ENV
 
           # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
-          digest_name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${$digest-platform//\//-}
+          digest_name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ env.digest_platform }}//\//-}
           echo "digest-name=$digest_name" >> $GITHUB_ENV
 
           repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
