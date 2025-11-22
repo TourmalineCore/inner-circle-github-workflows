@@ -29,7 +29,7 @@ on:
 
 jobs:
   build_digest:
-    runs-on: {{ inputs.runner-platform }}
+    runs-on: ${{ inputs.runner-platform }}
     steps:
       - name: Prepare
         run: |
