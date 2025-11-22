@@ -31,9 +31,11 @@ jobs:
     steps:
       - name: Prepare
         run: |
-          digest-platform = linux/${{ inputs.platform }}
+          # Examples of digest-platform: linux/amd64, linux/arm64
+          digest-platform=linux/${{ inputs.platform }}
 
-          digest-name= ${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ env.digest-platform }}//\//-}
+          # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
+          digest-name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ env.digest-platform }}//\//-}
 
           repository-lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
