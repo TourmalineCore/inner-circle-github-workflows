@@ -23,22 +23,25 @@ on:
       build-env:
         required: false
         type: string
-
-env:
-  # Examples of digest-platform: linux/amd64, linux/arm64
-  digest-platform: linux/${{ inputs.platform }}
-  # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
-  digest-name: ${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ env.digest-platform }}//\//-}
   
 jobs:
   build_digest:
     # Examples of runs-on platform: ubuntu-22.04, ubuntu-22.04-arm
     runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-22.04' || inputs.platform == 'arm64' && 'ubuntu-22.04-arm'}}
     steps:
-      - name: Get lowercase repository
+      - name: Prepare
         run: |
-          REPOSITORY_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          echo "repository=$REPOSITORY_LOWER" >> $GITHUB_ENV
+          # Examples of digest-platform: linux/amd64, linux/arm64
+          digest-platform = linux/${{ inputs.platform }}
+
+          # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
+          digest-name= ${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ env.digest-platform }}//\//-}
+
+          repository-lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          echo "digest-platform=$digest-platform" >> $GITHUB_ENV
+          echo "digest-name=$digest-name" >> $GITHUB_ENV
+          echo "repository=$repository-lower" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
