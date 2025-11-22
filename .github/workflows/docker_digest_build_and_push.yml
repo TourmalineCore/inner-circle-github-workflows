@@ -13,9 +13,6 @@ on:
       build-args:
         required: false
         type: string
-      prefix:
-        required: false
-        type: string
       # Prefix used to be able to build images for local-env and prod-env with different tags
       # prefix is also used to write current env to digest name to be able to build several docker images for several envs in one workflow
       # Example of prefix: local-env
