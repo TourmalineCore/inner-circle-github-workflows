@@ -32,7 +32,7 @@ jobs:
       - name: Prepare
         run: |
           # Examples of digest-platform: linux/amd64, linux/arm64
-          digest-platform='linux/${{ inputs.platform }}''
+          digest-platform='linux/${{ inputs.platform }}'
           echo "digest-platform=$digest-platform" >> $GITHUB_ENV
 
           # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
