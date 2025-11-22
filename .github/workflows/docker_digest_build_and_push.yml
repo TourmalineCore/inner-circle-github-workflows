@@ -30,13 +30,17 @@ env:
   digest-platform: linux/${{ inputs.platform }}
   # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
   digest-name: ${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ inputs.digest-platform }}//\//-}
-
   
 jobs:
   build_digest:
     # Examples of runs-on platform: ubuntu-22.04, ubuntu-22.04-arm
     runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-22.04' || inputs.platform == 'arm64' && 'ubuntu-22.04-arm'}}
     steps:
+      - name: Get lowercase repository
+        run: |
+          REPOSITORY_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "repository=$REPOSITORY_LOWER" >> $GITHUB_ENV
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
@@ -48,7 +52,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/tourmalinecore/${{ github.event.repository.name }}
+          images: ghcr.io/${{ env.repository }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -59,7 +63,7 @@ jobs:
         with:
           platforms: ${{ env.digest-platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          tags: ghcr.io/tourmalinecore/${{ github.event.repository.name }}
+          tags: ghcr.io/${{ env.repository }}
           build-args: ${{ inputs.build-args }}
           outputs: type=image,push-by-digest=true,name-canonical=true,push=true
 
