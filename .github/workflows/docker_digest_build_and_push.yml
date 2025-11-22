@@ -34,6 +34,7 @@ jobs:
           digest_name=${{ inputs.prefix && format('{0}-', inputs.prefix) || '' }}digests-${digest_platform//\//-}
           echo "digest-name=$digest_name" >> $GITHUB_ENV
 
+          # We need to make github.repository output lowercase because docker can work only with lowercase strings
           repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
           echo "repository=$repository_lower" >> $GITHUB_ENV
@@ -73,9 +74,6 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          # Prefix is needed to explicitly split digests by it's environment and download digests only for current environment
-          # and avoid using local env image in prod
-          # Example of digest name: local-digests-linux-amd64
           name: ${{ env.digest-name }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
