@@ -3,10 +3,7 @@ name: Publish Docker Image by Digest
 on:
   workflow_call:
     inputs:
-      runner-platform:
-        required: true
-        type: string
-      target-arch:
+      platform:
         required: true
         type: string
       # Prefix used to be able to build images for local-env and prod-env with different tags
@@ -27,14 +24,19 @@ on:
         required: false
         type: string
 
+env:
+  # Examples of digest-platform: ubuntu-22.04, ubuntu-22.04-arm
+  runner-platform: ${{ inputs.platform == 'amd64' && 'ubuntu-22.04' || inputs.platform == 'arm64' && 'ubuntu-22.04-arm'}}
+  # Examples of digest-platform: linux/amd64, linux/arm64
+  digest-platform: linux/${{ inputs.platform }}
+  # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
+  digest-name: ${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${${{ inputs.digest-platform }}//\//-}
+
+  
 jobs:
   build_digest:
-    runs-on: ${{ inputs.runner-platform }}
+    runs-on: ${{ env.runner-platform }}
     steps:
-      - name: Prepare
-        run: |
-          echo "PLATFORM_PAIR=${${{ inputs.target-arch }}//\//-}" >> $GITHUB_ENV
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
         with:
@@ -55,7 +57,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          platforms: ${{ env.PLATFORM_PAIR }}
+          platforms: ${{ env.digest-platform }}
           labels: ${{ steps.meta.outputs.labels }}
           tags: ghcr.io/tourmalinecore/${{ github.event.repository.name }}
           build-args: ${{ inputs.build-args }}
@@ -73,7 +75,7 @@ jobs:
           # Prefix build-env is needed to explicitly split digests by it's environment and download digests only for current environment
           # and avoid using local env image in prod
           # Example of digest name: local-digests-linux-amd64
-          name: ${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${{ env.PLATFORM_PAIR }}
+          name: ${{ env.digest-name }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
