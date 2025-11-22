@@ -21,20 +21,18 @@ jobs:
   build_amd64:
     uses: ./.github/workflows/docker_digest_build_and_push.yml
     with:
-      inputs:
-        platform: amd64
-        build-args: ${{ inputs.build-args }}
-        prefix: ${{ inputs.prefix }}
+      platform: amd64
+      build-args: ${{ inputs.build-args }}
+      prefix: ${{ inputs.prefix }}
     # without this it cannot login to the registry
     secrets: inherit
 
   build_arm64:
     uses: ./.github/workflows/docker_digest_build_and_push.yml
     with:
-      inputs:
-        platform: arm64
-        build-args: ${{ inputs.build-args }}
-        prefix: ${{ inputs.prefix }}  
+      platform: arm64
+      build-args: ${{ inputs.build-args }}
+      prefix: ${{ inputs.prefix }}  
   # without this it cannot login to the registry
     secrets: inherit
 
