@@ -28,7 +28,6 @@ jobs:
     # without this it cannot login to the registry
     secrets: inherit
 
-jobs:
   build_arm64:
     uses: ./.github/workflows/docker_digest_build_and_push.yml
     with:
