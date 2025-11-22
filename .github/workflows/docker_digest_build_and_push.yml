@@ -32,16 +32,16 @@ jobs:
       - name: Prepare
         run: |
           # Examples of digest-platform: linux/amd64, linux/arm64
-          digest-platform='linux/${{ inputs.platform }}'
-          echo "digest-platform=$digest-platform" >> $GITHUB_ENV
+          digest_platform=linux/${{ inputs.platform }}
+          echo "digest-platform=$digest_platform" >> $GITHUB_ENV
 
           # Examples of digest-name: local-digests-linux-amd64, digests-linux-arm64
-          digest-name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${$digest-platform//\//-}
-          echo "digest-name=$digest-name" >> $GITHUB_ENV
+          digest_name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${$digest-platform//\//-}
+          echo "digest-name=$digest_name" >> $GITHUB_ENV
 
           repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
-          echo "repository=$repository-lower" >> $GITHUB_ENV
+          echo "repository=$repository_lower" >> $GITHUB_ENV
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
