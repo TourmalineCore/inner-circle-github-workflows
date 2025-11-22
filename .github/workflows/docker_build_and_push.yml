@@ -5,8 +5,7 @@ on:
     inputs:
       # Build-args used to define variables that will be used in image
       # Example of build-args: "|
-                          #CDN_ENABLED=true
-                          #CDN_DOMAIN=cdn.domain.com"
+                          #EXCLUDE_UNIT_TESTS_FROM_BUILD=true"
       build-args:
         required: false
         type: string
