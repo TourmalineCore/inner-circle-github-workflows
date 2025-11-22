@@ -6,11 +6,6 @@ on:
       platform:
         required: true
         type: string
-      # Prefix used to be able to build images for local-env and prod-env with different tags
-      # Example of prefix: local-env
-      prefix:
-        required: false
-        type: string
       # Build-args used to define variables that will be used in image
       # Example of build-args: "|
                           #CDN_ENABLED=true
@@ -18,9 +13,13 @@ on:
       build-args:
         required: false
         type: string
-      # build-env is used to write current env to digest name to be able to build several docker images for several envs in one workflow
-      # Example of build-env: local
-      build-env:
+      prefix:
+        required: false
+        type: string
+      # Prefix used to be able to build images for local-env and prod-env with different tags
+      # prefix is also used to write current env to digest name to be able to build several docker images for several envs in one workflow
+      # Example of prefix: local-env
+      prefix:
         required: false
         type: string
   
@@ -31,12 +30,12 @@ jobs:
     steps:
       - name: Prepare
         run: |
-          # Examples of digest-platform: linux/amd64, linux/arm64
+          # Examples of digest_platform: linux/amd64, linux/arm64
           digest_platform=linux/${{ inputs.platform }}
           echo "digest-platform=$digest_platform" >> $GITHUB_ENV
 
-          # Examples of digest_name: local-digests-linux-amd64, digests-linux-arm64
-          digest_name=${{ inputs.build-env && format('{0}-', inputs.build-env) || '' }}digests-${digest_platform//\//-}
+          # Examples of digest_name: local-env-digests-linux-amd64, digests-linux-arm64
+          digest_name=${{ inputs.prefix && format('{0}-', inputs.prefix) || '' }}digests-${digest_platform//\//-}
           echo "digest-name=$digest_name" >> $GITHUB_ENV
 
           repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
@@ -78,7 +77,7 @@ jobs:
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
-          # Prefix build-env is needed to explicitly split digests by it's environment and download digests only for current environment
+          # Prefix is needed to explicitly split digests by it's environment and download digests only for current environment
           # and avoid using local env image in prod
           # Example of digest name: local-digests-linux-amd64
           name: ${{ env.digest-name }}
