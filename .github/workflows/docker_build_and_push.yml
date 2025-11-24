@@ -32,7 +32,7 @@ jobs:
       platform: arm64
       build-args: ${{ inputs.build-args }}
       prefix: ${{ inputs.prefix }}  
-  # without this it cannot login to the registry
+    # without this it cannot login to the registry
     secrets: inherit
 
   merge:
