@@ -1,0 +1,80 @@
+name: Publish Docker Image by Digest
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      # Build-args used to define variables that will be used in image
+      # Example of build-args: "|
+                          #EXCLUDE_UNIT_TESTS_FROM_BUILD=true"
+      build-args:
+        required: false
+        type: string
+      # Prefix used to be able to build images for local-env and prod-env with different tags
+      # prefix is also used to write current env to digest name to be able to build several docker images for several envs in one workflow
+      # Example of prefix: local-env
+      prefix:
+        required: false
+        type: string
+  
+jobs:
+  build_digest:
+    # Examples of runs-on platform: ubuntu-22.04, ubuntu-22.04-arm
+    runs-on: ${{ inputs.platform == 'amd64' && 'ubuntu-22.04' || inputs.platform == 'arm64' && 'ubuntu-22.04-arm'}}
+    steps:
+      - name: Prepare
+        run: |
+          # Examples of digest_platform: linux/amd64, linux/arm64
+          digest_platform=linux/${{ inputs.platform }}
+          echo "digest-platform=$digest_platform" >> $GITHUB_ENV
+
+          # Examples of digest_name: local-env-digests-linux-amd64, digests-linux-arm64
+          digest_name=${{ inputs.prefix && format('{0}-', inputs.prefix) || '' }}digests-${digest_platform//\//-}
+          echo "digest-name=$digest_name" >> $GITHUB_ENV
+
+          # We need to make github.repository output lowercase because docker can work only with lowercase strings
+          repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          echo "repository=$repository_lower" >> $GITHUB_ENV
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.repository }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          platforms: ${{ env.digest-platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          tags: ghcr.io/${{ env.repository }}
+          build-args: ${{ inputs.build-args }}
+          outputs: type=image,push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.digest-name }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
