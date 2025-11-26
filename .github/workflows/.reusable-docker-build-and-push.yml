@@ -1,5 +1,10 @@
 name: Publish Docker Image
 
+# !!! NEVER add on push when there is on workflow_call
+# if you do that the workflow can run multiple times
+# for instance if you re-use this docker build workflow for prod deployment and for local-env in PR
+# it will build the docker image it twice
+# if you build => deploy => run e2e against prod it will build the image 3 times!
 on:
   workflow_call:
     inputs:
@@ -17,8 +22,8 @@ on:
         type: string
 
 jobs:
-  build_amd64:
-    uses: ./.github/workflows/docker_digest_build_and_push.yml
+  build-amd64:
+    uses: ./.github/workflows/.reusable-docker-digest-build-and-push.yml
     with:
       platform: amd64
       build-args: ${{ inputs.build-args }}
@@ -26,8 +31,8 @@ jobs:
     # without this it cannot login to the registry
     secrets: inherit
 
-  build_arm64:
-    uses: ./.github/workflows/docker_digest_build_and_push.yml
+  build-arm64:
+    uses: ./.github/workflows/.reusable-docker-digest-build-and-push.yml
     with:
       platform: arm64
       build-args: ${{ inputs.build-args }}
@@ -38,14 +43,14 @@ jobs:
   merge:
     runs-on: ubuntu-22.04
     needs:
-      - build_amd64
-      - build_arm64
+      - build-amd64
+      - build-arm64
     steps:
-      - name: Prepare
+      # this is needed to address this issue according to the comment https://github.com/devcontainers/ci/issues/271#issuecomment-2301764487
+      # otherwise our TourmalineCore org name cannot be used in docker image names, only tourmalinecore
+      - name: Add Registry Image Env Var With Lowercase Organization and Repo Name
         run: |
-          repository_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-
-          echo "repository=$repository_lower" >> $GITHUB_ENV
+          echo "REGISTRY_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -71,18 +76,23 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.repository }}
+          images: ${{ env.REGISTRY_IMAGE }}
           tags: |
             type=raw,value=${{ inputs.prefix && format('{0}-', inputs.prefix) || '' }}latest,enable=${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
             type=sha,prefix=${{ inputs.prefix && format('{0}-', inputs.prefix) || '' }}sha-
             type=sha,format=long,prefix=${{ inputs.prefix && format('{0}-', inputs.prefix) || '' }}sha-
+        env:
+          # https://github.com/docker/metadata-action/issues/283
+          # without this flag it won't tag the image using the commit SHA 
+          # for non push events like pull_request ones it requires this :(
+          DOCKER_METADATA_PR_HEAD_SHA: true
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            $(printf 'ghcr.io/${{ env.repository }}@sha256:%s ' *)
+            $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ghcr.io/${{ env.repository }}:${{ steps.meta.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ steps.meta.outputs.version }}
